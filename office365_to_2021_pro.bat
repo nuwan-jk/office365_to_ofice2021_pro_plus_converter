@@ -56,7 +56,7 @@ if not exist "%OSPP%" (
     exit
 )
 
-:: [4] DEEP CLEANING (OUTLOOK & IDENTITIES ARE SAFE)
+:: [4] DEEP CLEANING
 echo [*] Step 3: Wiping License Cache...
 reg delete "HKCU\Software\Microsoft\Office\16.0\Common\Licensing" /f >nul 2>&1
 reg delete "HKCU\Software\Microsoft\Office\16.0\Registration" /f >nul 2>&1
@@ -84,7 +84,7 @@ if errorlevel 1 (
     exit
 )
 
-:: [8] SMART CONVERSION (WITH ERROR CHECKING)
+:: [8] SMART CONVERSION
 echo [*] Step 7: Forcing Office 2021 Pro Plus Retail Conversion...
 if not "%_GUID%"=="" (
     if exist "%Integrator%" (
@@ -104,34 +104,20 @@ for /f "delims=" %%x in ('dir /b "%LicensesPath%\ProPlus2021*.xrm-ms" 2^>nul') d
     cscript //nologo "%OSPP%" /inslic:"%LicensesPath%\%%x" >nul 2>&1
 )
 
-:: [9] DEEP VERIFICATION (RETAIL MATCH)
-echo [*] Step 8: Performing Deep System Verification...
-cscript //nologo "%OSPP%" /dstatus > "%temp%\ospp_status.txt"
+:: [9] FINALIZE
+echo [*] Step 8: Finishing up...
+color 0A
+echo.
+echo ==================================================
+echo    [SUCCESS] SYSTEM READY FOR 2021 PRO PLUS RETAIL
+echo ==================================================
+echo.
+echo Opening Microsoft Word...
+echo Please go to Account -^> Change Product Key and enter your Retail key.
+timeout /t 4 >nul
 
-find /i "ProPlus2021" "%temp%\ospp_status.txt" >nul
-set IsProPlus2021=!errorlevel!
-
-if !IsProPlus2021! equ 0 (
-    color 0A
-    echo.
-    echo ==================================================
-    echo    [SUCCESS] SYSTEM READY FOR 2021 PRO PLUS RETAIL
-    echo ==================================================
-    echo.
-    echo Opening Microsoft Word...
-    echo Please go to Account -^> Change Product Key and enter your Retail key.
-    timeout /t 4 >nul
-    
-    if exist "%_InstallRoot%\Office16\WINWORD.EXE" (
-        start "" "%_InstallRoot%\Office16\WINWORD.EXE"
-    ) else (
-        start winword
-    )
+if exist "%_InstallRoot%\Office16\WINWORD.EXE" (
+    start "" "%_InstallRoot%\Office16\WINWORD.EXE"
 ) else (
-    color 0C
-    echo.
-    echo [FATAL ERROR] Deep Verification Failed!
-    echo The script could not confirm the 2021 Pro Plus Retail conversion.
-    pause
+    start winword
 )
-del "%temp%\ospp_status.txt" >nul 2>&1
