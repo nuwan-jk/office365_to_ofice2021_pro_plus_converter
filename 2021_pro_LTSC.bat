@@ -2,7 +2,7 @@
 setlocal EnableDelayedExpansion
 
 :: [1] AUTO-ADMIN
->nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe" "%SYSTEMROOT%\system32\config\system"
+>nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe "%SYSTEMROOT%\system32\config\system"
 if '%errorlevel%' NEQ '0' (
     echo Requesting Administrator Privileges...
     echo Set UAC = CreateObject^("Shell.Application"^) > "%temp%\getadmin.vbs"
@@ -14,16 +14,18 @@ if exist "%temp%\getadmin.vbs" ( del "%temp%\getadmin.vbs" )
 pushd "%CD%"
 CD /D "%~dp0"
 
-title Office 2021 System Preparation Tool
+title Office 2021 LTSC Force Converter
 color 0B
 echo ==================================================
-echo    OFFICE 2021 PREPARATION TOOL (MANUAL READY)
+echo    OFFICE 2021 LTSC FORCE CONVERTER
 echo ==================================================
 echo.
 
-:: [2] FORCE CLOSE RUNNING APPS
-echo [*] Step 1: Closing running Office applications...
-for %%a in (winword excel powerpnt outlook) do (
+:: [2] FORCE CLOSE OFFICE AND C2R SERVICES
+echo [*] Step 1: Stopping Office ClickToRun and Apps...
+net stop OSPPSVC >nul 2>&1
+net stop ClickToRunSvc >nul 2>&1
+for %%a in (winword excel powerpnt outlook OfficeClickToRun) do (
     taskkill /F /IM %%a.exe /T >nul 2>&1
 )
 
@@ -51,41 +53,28 @@ set "Integrator=%_InstallRoot%\integration\integrator.exe"
 
 if not exist "%OSPP%" (
     color 0C
-    echo [FATAL ERROR] OSPP.VBS tool is missing. Corrupted installation!
+    echo [FATAL ERROR] OSPP.VBS tool is missing.
     pause
     exit
 )
 
-:: [4] DEEP CLEANING
-echo [*] Step 3: Wiping License Cache...
+:: [4] WIPE ALL LICENSES & REGISTRY CACHE (FORCE FLUSH)
+echo [*] Step 3: Purging old Office 365 / Retail licenses...
+reg delete "HKLM\SOFTWARE\Microsoft\Office\ClickToRun\Configuration" /v ProductReleaseIds /f >nul 2>&1
 reg delete "HKCU\Software\Microsoft\Office\16.0\Common\Licensing" /f >nul 2>&1
 reg delete "HKCU\Software\Microsoft\Office\16.0\Registration" /f >nul 2>&1
 
-:: [5] MITIGATE M365 AUTO-ACTIVATION
-echo [*] Step 4: Applying Subscription Mitigation Policy...
-reg add "HKLM\SOFTWARE\Policies\Microsoft\Office\16.0\Common\Licensing" /v DisableSubscription /t REG_DWORD /d 1 /f >nul 2>&1
-reg add "HKCU\SOFTWARE\Policies\Microsoft\Office\16.0\Common\Licensing" /v DisableSubscription /t REG_DWORD /d 1 /f >nul 2>&1
-
-:: [6] PURGE GHOST KEYS
-echo [*] Step 5: Destroying old Licenses and Ghost Keys...
 cscript //nologo "%OSPP%" /remhst >nul 2>&1
 cscript //nologo "%OSPP%" /ckms-domain >nul 2>&1
-for /f "delims=" %%a in ('powershell -NoProfile -Command "(cscript //nologo \"%OSPP%\" /dstatus) | Select-String -Pattern 'Last 5 characters of installed product key: ([A-Z0-9]{5})' | ForEach-Object { $_.Matches.Groups[1].Value }" 2^>nul') do (
+for /f "tokens=8" %%a in ('cscript //nologo "%OSPP%" /dstatus ^| findstr /i "Last 5"') do (
     cscript //nologo "%OSPP%" /unpkey:%%a >nul 2>&1
 )
 
-:: [7] VERIFY CERTIFICATES
-echo [*] Step 6: Validating 2021 Pro Plus Certificates...
-dir /b "%LicensesPath%\ProPlus2021*.xrm-ms" >nul 2>&1
-if errorlevel 1 (
-    color 0C
-    echo [FATAL ERROR] Office 2021 Certificates are missing on this system!
-    pause
-    exit
-)
+:: [5] START C2R SERVICE TO APPLY CHANGES
+net start ClickToRunSvc >nul 2>&1
 
-:: [8] SMART CONVERSION & KMS SETUP
-echo [*] Step 7: Configuring LTSC 2021 Environment...
+:: [6] FORCE CONVERSION TO 2021 LTSC PRO PLUS
+echo [*] Step 4: Forcing LTSC 2021 Volume Conversion...
 if not "%_GUID%"=="" (
     if exist "%Integrator%" (
         "%Integrator%" /I /License PRIDName=ProPlus2021Volume.16 PackageGUID="%_GUID%" PackageRoot="%_InstallRoot%" >nul 2>&1
@@ -99,22 +88,20 @@ for /f "delims=" %%x in ('dir /b "%LicensesPath%\ProPlus2021*.xrm-ms" 2^>nul') d
     cscript //nologo "%OSPP%" /inslic:"%LicensesPath%\%%x" >nul 2>&1
 )
 
+:: [7] SET KMS SERVER & REMOVE ANY ACCIDENTAL KEYS FOR MANUAL STATE
 cscript //nologo "%OSPP%" /sethst:kms8.msguides.com >nul 2>&1
 cscript //nologo "%OSPP%" /setprt:1688 >nul 2>&1
 
-:: [9] STRIP ACTIVE KEY TO FORCE "ACTIVATION REQUIRED" STATE
-echo [*] Step 8: Preparing for manual key entry...
 for /f "tokens=8" %%a in ('cscript //nologo "%OSPP%" /dstatus ^| findstr /i "Last 5"') do (
     cscript //nologo "%OSPP%" /unpkey:%%a >nul 2>&1
 )
 
-:: [10] LAUNCH WORD
+:: [8] LAUNCH WORD
 color 0A
 echo.
 echo ==================================================
-echo    [SUCCESS] READY FOR CUSTOMER MANUAL ACTIVATION
+echo    [SUCCESS] READY FOR MANUAL ACTIVATION
 echo ==================================================
-echo.
 echo Opening Microsoft Word...
 timeout /t 4 >nul
 
