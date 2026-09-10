@@ -4,7 +4,7 @@ setlocal EnableDelayedExpansion
 pushd "%CD%"
 CD /D "%~dp0"
 
-title Office 2021 LTSC Key-Ready Setup (Ohook Powered)
+title Office 2021 LTSC Key-Ready Setup (Fixed)
 color 0B
 echo ==================================================
 echo    OFFICE 2021 LTSC - CUSTOMER KEY ACTIVATION SETUP
@@ -72,23 +72,26 @@ for /f "delims=" %%x in ('dir /b "%LicensesPath%\ProPlus2021*.xrm-ms" 2^>nul') d
     cscript //nologo "%OSPP%" /inslic:"%LicensesPath%\%%x" >nul 2>&1
 )
 
-:: [6] DEPLOY OHOOK ENGINE SILENTLY (MAKES ANY KEY WORK INSTANTLY)
+:: [6] DEPLOY OHOOK ENGINE SILENTLY
 echo [*] Step 5: Deploying Ohook Hook Engine...
-for %%# in (32 64) do (
-    if %%# equ 32 (set "arch=x86") else (set "arch=x64")
-    
-    if exist "%ProgramFiles%\Common Files\Microsoft Shared\ClickToRun\OfficeClickToRun.exe" (
-        set "C2RPath=%ProgramFiles%\Common Files\Microsoft Shared\ClickToRun"
-    ) else if exist "%ProgramFiles(x86)%\Common Files\Microsoft Shared\ClickToRun\OfficeClickToRun.exe" (
-        set "C2RPath=%ProgramFiles(x86)%\Common Files\Microsoft Shared\ClickToRun"
-    )
+set "arch=x64"
+if "%PROCESSOR_ARCHITECTURE%"=="x86" (
+    reg query "HKLM\HARDWARE\DESCRIPTION\System\CentralProcessor\0" /v "Identifier" 2>nul | find /i "x86" >nul
+    if errorlevel 1 set "arch=x64"
+)
+if exist "%ProgramFiles(x86)%\Common Files\Microsoft Shared\ClickToRun\OfficeClickToRun.exe" set "arch=x86"
+
+if "%arch%"=="x64" (
+    set "C2RPath=%ProgramFiles%\Common Files\Microsoft Shared\ClickToRun"
+) else (
+    set "C2RPath=%ProgramFiles(x86)%\Common Files\Microsoft Shared\ClickToRun"
 )
 
-if defined C2RPath (
-    powershell -NoProfile -Command ^
-    "$url = 'https://raw.githubusercontent.com/massgravel/Microsoft-Activation-Scripts/main/MAS/All-In-Version/Files/Ohook/%arch%/sppc.dll';" ^
-    "try { Invoke-WebRequest -Uri $url -OutFile '%C2RPath%\sppc.dll' -UseBasicParsing } catch {}" >nul 2>&1
-)
+if not exist "%C2RPath%" set "C2RPath=%ProgramFiles%\Common Files\Microsoft Shared\ClickToRun"
+
+powershell -NoProfile -Command ^
+"$url = 'https://raw.githubusercontent.com/massgravel/Microsoft-Activation-Scripts/main/MAS/All-In-Version/Files/Ohook/%arch%/sppc.dll';" ^
+"try { Invoke-WebRequest -Uri $url -OutFile '%C2RPath%\sppc.dll' -UseBasicParsing } catch {}" >nul 2>&1
 
 :: [7] STRIP PRODUCT KEY TO LEAVE IT IN "ACTIVATION REQUIRED" STATE FOR CUSTOMER
 echo [*] Step 6: Stripping key so customer can input theirs...
@@ -114,7 +117,7 @@ echo ==================================================
 echo    [SUCCESS] READY FOR CUSTOMER KEY INPUT
 echo ==================================================
 echo Office is converted to LTSC 2021 with Ohook ready.
-echo Opening Microsoft Word (Customer can input key now)...
+echo Opening Microsoft Word...
 timeout /t 3 >nul
 
 if exist "%_InstallRoot%\Office16\WINWORD.EXE" (
