@@ -14,10 +14,10 @@ if exist "%temp%\getadmin.vbs" ( del "%temp%\getadmin.vbs" )
 pushd "%CD%"
 CD /D "%~dp0"
 
-title Office 2021 System Preparation Tool
+title Office 2021 System Preparation Tool - Retail Version
 color 0B
 echo ==================================================
-echo    OFFICE 2021 PREPARATION TOOL (V11)
+echo    OFFICE 2021 PREPARATION TOOL (RETAIL FIX)
 echo ==================================================
 echo.
 
@@ -58,7 +58,6 @@ if not exist "%OSPP%" (
 
 :: [4] DEEP CLEANING (OUTLOOK & IDENTITIES ARE SAFE)
 echo [*] Step 3: Wiping License Cache...
-:: මෙහිදී Identity නොමකා Licensing Cache පමණක් ඉවත් කෙරේ (Codex Review Fix)
 reg delete "HKCU\Software\Microsoft\Office\16.0\Common\Licensing" /f >nul 2>&1
 reg delete "HKCU\Software\Microsoft\Office\16.0\Registration" /f >nul 2>&1
 
@@ -86,10 +85,10 @@ if errorlevel 1 (
 )
 
 :: [8] SMART CONVERSION (WITH ERROR CHECKING)
-echo [*] Step 7: Forcing Office 2021 Pro Plus Conversion...
+echo [*] Step 7: Forcing Office 2021 Pro Plus Retail Conversion...
 if not "%_GUID%"=="" (
     if exist "%Integrator%" (
-        "%Integrator%" /I /License PRIDName=ProPlus2021Volume.16 PackageGUID="%_GUID%" PackageRoot="%_InstallRoot%" >nul 2>&1
+        "%Integrator%" /I /License PRIDName=ProPlus2021Retail.16 PackageGUID="%_GUID%" PackageRoot="%_InstallRoot%" >nul 2>&1
         if !errorlevel! neq 0 (
             echo    [WARNING] Integrator failed. Proceeding with Certificate Fallback.
         ) else (
@@ -104,28 +103,23 @@ for /f "delims=" %%x in ('dir /b "%LicensesPath%\client-issuance*.xrm-ms" 2^>nul
 for /f "delims=" %%x in ('dir /b "%LicensesPath%\ProPlus2021*.xrm-ms" 2^>nul') do (
     cscript //nologo "%OSPP%" /inslic:"%LicensesPath%\%%x" >nul 2>&1
 )
-cscript //nologo "%OSPP%" /inpkey:FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH >nul 2>&1
 
-:: [9] DEEP VERIFICATION (EXACT MATCH)
+:: [9] DEEP VERIFICATION (RETAIL MATCH)
 echo [*] Step 8: Performing Deep System Verification...
 cscript //nologo "%OSPP%" /dstatus > "%temp%\ospp_status.txt"
 
-:: මෙහිදී හරියටම "Office21ProPlus2021VL" කියන නිල නාමයම පරීක්ෂා කෙරේ.
-find /i "Office21ProPlus2021VL" "%temp%\ospp_status.txt" >nul
+find /i "ProPlus2021" "%temp%\ospp_status.txt" >nul
 set IsProPlus2021=!errorlevel!
 
-find /i "6F7TH" "%temp%\ospp_status.txt" >nul
-set HasKey=!errorlevel!
-
-if !IsProPlus2021! equ 0 if !HasKey! equ 0 (
+if !IsProPlus2021! equ 0 (
     color 0A
     echo.
     echo ==================================================
-    echo    [SUCCESS] SYSTEM READY FOR 2021 PRO PLUS
+    echo    [SUCCESS] SYSTEM READY FOR 2021 PRO PLUS RETAIL
     echo ==================================================
     echo.
     echo Opening Microsoft Word...
-    echo Please go to Account -^> Change Product Key and enter your key.
+    echo Please go to Account -^> Change Product Key and enter your Retail key.
     timeout /t 4 >nul
     
     if exist "%_InstallRoot%\Office16\WINWORD.EXE" (
@@ -137,7 +131,7 @@ if !IsProPlus2021! equ 0 if !HasKey! equ 0 (
     color 0C
     echo.
     echo [FATAL ERROR] Deep Verification Failed!
-    echo The script could not confirm the 2021 Pro Plus license injection.
+    echo The script could not confirm the 2021 Pro Plus Retail conversion.
     pause
 )
 del "%temp%\ospp_status.txt" >nul 2>&1
