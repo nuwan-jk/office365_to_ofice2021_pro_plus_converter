@@ -1,28 +1,17 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-:: [1] DIRECT ADMIN CHECK (NO RECURSIVE LOOPS)
-net session >nul 2>&1
-if %errorlevel% neq 0 (
-    echo ==================================================
-    echo [ERROR] Please right-click the bat file and select:
-    echo "Run as administrator"
-    echo ==================================================
-    pause
-    exit /b
-)
-
 pushd "%CD%"
 CD /D "%~dp0"
 
 title Office 2021 LTSC Force Converter
 color 0B
 echo ==================================================
-echo    OFFICE 2021 LTSC FORCE CONVERTER (FINAL FIX)
+echo    OFFICE 2021 LTSC FORCE CONVERTER (AUTO)
 echo ==================================================
 echo.
 
-:: [2] FORCE CLOSE OFFICE AND C2R SERVICES
+:: [1] STOP SERVICES & APPS
 echo [*] Step 1: Stopping Office ClickToRun and Apps...
 net stop OSPPSVC >nul 2>&1
 net stop ClickToRunSvc >nul 2>&1
@@ -30,7 +19,7 @@ for %%a in (winword excel powerpnt outlook OfficeClickToRun) do (
     taskkill /F /IM %%a.exe /T >nul 2>&1
 )
 
-:: [3] DETECT OFFICE & GUID
+:: [2] DETECT OFFICE & GUID
 echo [*] Step 2: Detecting Office Installation ^& PackageGUID...
 set "_InstallRoot="
 set "_GUID="
@@ -59,7 +48,7 @@ if not exist "%OSPP%" (
     exit
 )
 
-:: [4] WIPE ALL LICENSES & REGISTRY CACHE
+:: [3] WIPE OLD LICENSES
 echo [*] Step 3: Purging old Office 365 / Retail licenses...
 reg delete "HKLM\SOFTWARE\Microsoft\Office\ClickToRun\Configuration" /v ProductReleaseIds /f >nul 2>&1
 reg delete "HKCU\Software\Microsoft\Office\16.0\Common\Licensing" /f >nul 2>&1
@@ -71,10 +60,10 @@ for /f "tokens=8" %%a in ('cscript //nologo "%OSPP%" /dstatus ^| findstr /i "Las
     cscript //nologo "%OSPP%" /unpkey:%%a >nul 2>&1
 )
 
-:: [5] START C2R SERVICE TO APPLY CHANGES
+:: [4] START C2R SERVICE
 net start ClickToRunSvc >nul 2>&1
 
-:: [6] FORCE CONVERSION TO 2021 LTSC PRO PLUS
+:: [5] FORCE CONVERSION TO LTSC PRO PLUS 2021
 echo [*] Step 4: Forcing LTSC 2021 Volume Conversion...
 if not "%_GUID%"=="" (
     if exist "%Integrator%" (
@@ -89,8 +78,8 @@ for /f "delims=" %%x in ('dir /b "%LicensesPath%\ProPlus2021*.xrm-ms" 2^>nul') d
     cscript //nologo "%OSPP%" /inslic:"%LicensesPath%\%%x" >nul 2>&1
 )
 
-:: [7] SET KMS SERVER & REMOVE KEY FOR MANUAL STATE
-echo [*] Step 5: Configuring KMS Server and preparing manual state...
+:: [6] SET KMS & STRIP KEYS FOR MANUAL STATE
+echo [*] Step 5: Configuring KMS Server and manual state...
 cscript //nologo "%OSPP%" /sethst:kms8.msguides.com >nul 2>&1
 cscript //nologo "%OSPP%" /setprt:1688 >nul 2>&1
 
@@ -98,7 +87,7 @@ for /f "tokens=8" %%a in ('cscript //nologo "%OSPP%" /dstatus ^| findstr /i "Las
     cscript //nologo "%OSPP%" /unpkey:%%a >nul 2>&1
 )
 
-:: [8] LAUNCH WORD
+:: [7] LAUNCH WORD
 color 0A
 echo.
 echo ==================================================
