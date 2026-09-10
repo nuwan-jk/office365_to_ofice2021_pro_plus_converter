@@ -17,7 +17,7 @@ CD /D "%~dp0"
 title Office 2021 System Preparation Tool
 color 0B
 echo ==================================================
-echo    OFFICE 2021 PREPARATION TOOL (FINAL)
+echo    OFFICE 2021 PREPARATION TOOL (MANUAL READY)
 echo ==================================================
 echo.
 
@@ -84,16 +84,11 @@ if errorlevel 1 (
     exit
 )
 
-:: [8] SMART CONVERSION (VOLUME - NO KEY INJECTED)
-echo [*] Step 7: Forcing Office 2021 Pro Plus Conversion...
+:: [8] SMART CONVERSION & KMS SETUP
+echo [*] Step 7: Configuring LTSC 2021 Environment...
 if not "%_GUID%"=="" (
     if exist "%Integrator%" (
         "%Integrator%" /I /License PRIDName=ProPlus2021Volume.16 PackageGUID="%_GUID%" PackageRoot="%_InstallRoot%" >nul 2>&1
-        if !errorlevel! neq 0 (
-            echo    [WARNING] Integrator failed. Proceeding with Certificate Fallback.
-        ) else (
-            echo    [OK] Integrator configured successfully.
-        )
     )
 )
 
@@ -104,16 +99,20 @@ for /f "delims=" %%x in ('dir /b "%LicensesPath%\ProPlus2021*.xrm-ms" 2^>nul') d
     cscript //nologo "%OSPP%" /inslic:"%LicensesPath%\%%x" >nul 2>&1
 )
 
-:: KMS Server එක පමණක් සෙට් කර Auto-activation වළක්වා ඇත (Manual State)
-cscript //nologo "%OSPP%" /remhst >nul 2>&1
 cscript //nologo "%OSPP%" /sethst:kms8.msguides.com >nul 2>&1
 cscript //nologo "%OSPP%" /setprt:1688 >nul 2>&1
 
-:: [9] LAUNCH WORD FOR MANUAL ACTIVATION
+:: [9] STRIP ACTIVE KEY TO FORCE "ACTIVATION REQUIRED" STATE
+echo [*] Step 8: Preparing for manual key entry...
+for /f "tokens=8" %%a in ('cscript //nologo "%OSPP%" /dstatus ^| findstr /i "Last 5"') do (
+    cscript //nologo "%OSPP%" /unpkey:%%a >nul 2>&1
+)
+
+:: [10] LAUNCH WORD
 color 0A
 echo.
 echo ==================================================
-echo    [SUCCESS] SYSTEM READY FOR MANUAL ACTIVATION
+echo    [SUCCESS] READY FOR CUSTOMER MANUAL ACTIVATION
 echo ==================================================
 echo.
 echo Opening Microsoft Word...
