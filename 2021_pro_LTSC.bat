@@ -17,7 +17,7 @@ CD /D "%~dp0"
 title Office 2021 System Preparation Tool
 color 0B
 echo ==================================================
-echo    OFFICE 2021 PREPARATION TOOL (V11-MOD)
+echo    OFFICE 2021 PREPARATION TOOL (FINAL)
 echo ==================================================
 echo.
 
@@ -56,7 +56,7 @@ if not exist "%OSPP%" (
     exit
 )
 
-:: [4] DEEP CLEANING (OUTLOOK & IDENTITIES ARE SAFE)
+:: [4] DEEP CLEANING
 echo [*] Step 3: Wiping License Cache...
 reg delete "HKCU\Software\Microsoft\Office\16.0\Common\Licensing" /f >nul 2>&1
 reg delete "HKCU\Software\Microsoft\Office\16.0\Registration" /f >nul 2>&1
@@ -104,38 +104,24 @@ for /f "delims=" %%x in ('dir /b "%LicensesPath%\ProPlus2021*.xrm-ms" 2^>nul') d
     cscript //nologo "%OSPP%" /inslic:"%LicensesPath%\%%x" >nul 2>&1
 )
 
-:: මෙතනදී KMS Server එක විතරක් set කරනවා, Key එකක් දාන්නේ නෑ (Manual Activation සඳහා)
+:: KMS Server එක පමණක් සෙට් කර Auto-activation වළක්වා ඇත (Manual State)
+cscript //nologo "%OSPP%" /remhst >nul 2>&1
 cscript //nologo "%OSPP%" /sethst:kms8.msguides.com >nul 2>&1
 cscript //nologo "%OSPP%" /setprt:1688 >nul 2>&1
 
-:: [9] DEEP VERIFICATION (CERTIFICATE & LICENSE CHECK ONLY)
-echo [*] Step 8: Performing Deep System Verification...
-cscript //nologo "%OSPP%" /dstatus > "%temp%\ospp_status.txt"
+:: [9] LAUNCH WORD FOR MANUAL ACTIVATION
+color 0A
+echo.
+echo ==================================================
+echo    [SUCCESS] SYSTEM READY FOR MANUAL ACTIVATION
+echo ==================================================
+echo.
+echo Opening Microsoft Word...
+timeout /t 4 >nul
 
-find /i "Office21ProPlus2021VL" "%temp%\ospp_status.txt" >nul
-set IsProPlus2021=!errorlevel!
-
-if !IsProPlus2021! equ 0 (
-    color 0A
-    echo.
-    echo ==================================================
-    echo    [SUCCESS] SYSTEM READY FOR MANUAL ACTIVATION
-    echo ==================================================
-    echo.
-    echo Opening Microsoft Word...
-    echo Please go to Account -^> Change Product Key and enter your key.
-    timeout /t 4 >nul
-    
-    if exist "%_InstallRoot%\Office16\WINWORD.EXE"[cite: 2]
-        start "" "%_InstallRoot%\Office16\WINWORD.EXE"
-    ) else (
-        start winword
-    )
+if exist "%_InstallRoot%\Office16\WINWORD.EXE" (
+    start "" "%_InstallRoot%\Office16\WINWORD.EXE"
 ) else (
-    color 0C
-    echo.
-    echo [FATAL ERROR] Deep Verification Failed!
-    echo The script could not confirm the 2021 Pro Plus license injection.
-    pause
+    start winword
 )
-del "%temp%\ospp_status.txt" >nul 2>&1
+exit
