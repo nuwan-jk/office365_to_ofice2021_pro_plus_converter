@@ -59,7 +59,7 @@ if not exist "%OSPP%" (
     exit
 )
 
-:: [4] WIPE OLD LICENSES
+:: [4] WIPE OLD LICENSES (FIXED LOOP)
 echo [*] Step 3: Purging old Office 365 / Retail licenses...
 reg delete "HKLM\SOFTWARE\Microsoft\Office\ClickToRun\Configuration" /v ProductReleaseIds /f >nul 2>&1
 reg delete "HKCU\Software\Microsoft\Office\16.0\Common\Licensing" /f >nul 2>&1
@@ -67,8 +67,10 @@ reg delete "HKCU\Software\Microsoft\Office\16.0\Registration" /f >nul 2>&1
 
 cscript //nologo "%OSPP%" /remhst >nul 2>&1
 cscript //nologo "%OSPP%" /ckms-domain >nul 2>&1
-for /f "tokens=8" %%a in ('cscript //nologo "%OSPP%" /dstatus ^| findstr /i "Last 5"') do (
-    cscript //nologo "%OSPP%" /unpkey:%%a >nul 2>&1
+for /f "tokens=2 delims=:" %%a in ('cscript //nologo "%OSPP%" /dstatus ^| findstr /i "Last 5"') do (
+    for %%b in (%%a) do (
+        cscript //nologo "%OSPP%" /unpkey:%%b >nul 2>&1
+    )
 )
 
 :: [5] START C2R SERVICE
@@ -89,13 +91,15 @@ for /f "delims=" %%x in ('dir /b "%LicensesPath%\ProPlus2021*.xrm-ms" 2^>nul') d
     cscript //nologo "%OSPP%" /inslic:"%LicensesPath%\%%x" >nul 2>&1
 )
 
-:: [7] SET KMS & STRIP KEYS FOR MANUAL STATE
+:: [7] SET KMS & STRIP KEYS FOR MANUAL STATE (FIXED LOOP)
 echo [*] Step 5: Configuring KMS Server and manual state...
 cscript //nologo "%OSPP%" /sethst:kms8.msguides.com >nul 2>&1
 cscript //nologo "%OSPP%" /setprt:1688 >nul 2>&1
 
-for /f "tokens=8" %%a in ('cscript //nologo "%OSPP%" /dstatus ^| findstr /i "Last 5"') do (
-    cscript //nologo "%OSPP%" /unpkey:%%a >nul 2>&1
+for /f "tokens=2 delims=:" %%a in ('cscript //nologo "%OSPP%" /dstatus ^| findstr /i "Last 5"') do (
+    for %%b in (%%a) do (
+        cscript //nologo "%OSPP%" /unpkey:%%b >nul 2>&1
+    )
 )
 
 :: [8] APPLYING NEW REGISTRY TWEAKS (Sign-in, Telemetry, Workplace Join)
