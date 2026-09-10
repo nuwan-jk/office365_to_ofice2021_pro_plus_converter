@@ -1,28 +1,24 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-:: [1] ROBUST AUTO-ADMIN CHECK & ELEVATION
->nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe" "%SYSTEMROOT%\system32\config\system"
-if '%errorlevel%' NEQ '0' (
-    echo Requesting administrative privileges...
-    goto UACPrompt
-) else ( goto gotAdmin )
+:: [1] DIRECT ADMIN CHECK (NO RECURSIVE LOOPS)
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    echo ==================================================
+    echo [ERROR] Please right-click the bat file and select:
+    echo "Run as administrator"
+    echo ==================================================
+    pause
+    exit /b
+)
 
-:UACPrompt
-echo Set UAC = CreateObject^("Shell.Application"^) > "%temp%\getadmin.vbs"
-echo UAC.ShellExecute "%~s0", "", "", "runas", 1 >> "%temp%\getadmin.vbs"
-"%temp%\getadmin.vbs"
-exit /B
-
-:gotAdmin
-if exist "%temp%\getadmin.vbs" ( del "%temp%\getadmin.vbs" )
 pushd "%CD%"
 CD /D "%~dp0"
 
 title Office 2021 LTSC Force Converter
 color 0B
 echo ==================================================
-echo    OFFICE 2021 LTSC FORCE CONVERTER
+echo    OFFICE 2021 LTSC FORCE CONVERTER (FINAL FIX)
 echo ==================================================
 echo.
 
@@ -63,7 +59,7 @@ if not exist "%OSPP%" (
     exit
 )
 
-:: [4] WIPE ALL LICENSES & REGISTRY CACHE (FORCE FLUSH)
+:: [4] WIPE ALL LICENSES & REGISTRY CACHE
 echo [*] Step 3: Purging old Office 365 / Retail licenses...
 reg delete "HKLM\SOFTWARE\Microsoft\Office\ClickToRun\Configuration" /v ProductReleaseIds /f >nul 2>&1
 reg delete "HKCU\Software\Microsoft\Office\16.0\Common\Licensing" /f >nul 2>&1
@@ -94,6 +90,7 @@ for /f "delims=" %%x in ('dir /b "%LicensesPath%\ProPlus2021*.xrm-ms" 2^>nul') d
 )
 
 :: [7] SET KMS SERVER & REMOVE KEY FOR MANUAL STATE
+echo [*] Step 5: Configuring KMS Server and preparing manual state...
 cscript //nologo "%OSPP%" /sethst:kms8.msguides.com >nul 2>&1
 cscript //nologo "%OSPP%" /setprt:1688 >nul 2>&1
 
@@ -108,7 +105,7 @@ echo ==================================================
 echo    [SUCCESS] READY FOR MANUAL ACTIVATION
 echo ==================================================
 echo Opening Microsoft Word...
-timeout /t 4 >nul
+timeout /t 3 >nul
 
 if exist "%_InstallRoot%\Office16\WINWORD.EXE" (
     start "" "%_InstallRoot%\Office16\WINWORD.EXE"
