@@ -1,16 +1,15 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-:: [1] AUTO-ADMIN
->nul 2>&1 "%SYSTEMROOT%\system32\cacls.exe "%SYSTEMROOT%\system32\config\system"
-if '%errorlevel%' NEQ '0' (
-    echo Requesting Administrator Privileges...
-    echo Set UAC = CreateObject^("Shell.Application"^) > "%temp%\getadmin.vbs"
-    echo UAC.ShellExecute "%~s0", "", "", "runas", 1 >> "%temp%\getadmin.vbs"
-    "%temp%\getadmin.vbs"
-    exit /B
+:: [1] SIMPLE ADMIN CHECK
+net session >nul 2>&1
+if %errorlevel% neq 0 (
+    color 0C
+    echo [FATAL ERROR] Please right-click this script and choose "Run as administrator"!
+    pause
+    exit /b
 )
-if exist "%temp%\getadmin.vbs" ( del "%temp%\getadmin.vbs" )
+
 pushd "%CD%"
 CD /D "%~dp0"
 
@@ -88,7 +87,7 @@ for /f "delims=" %%x in ('dir /b "%LicensesPath%\ProPlus2021*.xrm-ms" 2^>nul') d
     cscript //nologo "%OSPP%" /inslic:"%LicensesPath%\%%x" >nul 2>&1
 )
 
-:: [7] SET KMS SERVER & REMOVE ANY ACCIDENTAL KEYS FOR MANUAL STATE
+:: [7] SET KMS SERVER & REMOVE KEY FOR MANUAL STATE
 cscript //nologo "%OSPP%" /sethst:kms8.msguides.com >nul 2>&1
 cscript //nologo "%OSPP%" /setprt:1688 >nul 2>&1
 
