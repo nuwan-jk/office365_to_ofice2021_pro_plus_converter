@@ -4,17 +4,17 @@ setlocal EnableDelayedExpansion
 pushd "%CD%"
 CD /D "%~dp0"
 
-title Office 2021 LTSC Direct Fix Activator
+title Office 2021 LTSC Stable Activator
 color 0B
 echo ==================================================
-echo    OFFICE 2021 LTSC - AUTO ELEVATE ACTIVATOR
+echo    OFFICE 2021 LTSC - STABLE FIX & ACTIVATION
 echo ==================================================
 echo.
 
-:: [1] AUTO ELEVATE TO ADMIN (NO MANUAL RIGHT-CLICK NEEDED)
+:: [1] AUTO ELEVATE TO ADMIN
 net session >nul 2>&1
 if %errorLevel% neq 0 (
-    echo [*] Requesting Administrator privileges automatically...
+    echo [*] Requesting Administrator privileges...
     powershell -NoProfile -Command "Start-Process '%~f0' -Verb RunAs"
     exit
 )
@@ -80,30 +80,23 @@ for /f "delims=" %%x in ('dir /b "%LicensesPath%\ProPlus2021*.xrm-ms" 2^>nul') d
     cscript //nologo "%OSPP%" /inslic:"%LicensesPath%\%%x" >nul 2>&1
 )
 
-:: [7] DEPLOY OHOOK (SPPC.DLL) DIRECTLY FOR BOTH ARCHITECTURES TO PREVENT FAILURES
-echo [*] Step 5: Deploying Ohook Engine across paths...
+:: [7] DEPLOY OHOOK (SPPC.DLL) ROBUSTLY
+echo [*] Step 5: Deploying Ohook Engine...
 powershell -NoProfile -Command ^
-"$paths = @(" ^
-"  \"$env:ProgramFiles\Common Files\Microsoft Shared\ClickToRun\issuance\..\..\ClickToRun\sppc.dll\..\..\..\..\..\Program Files\Common Files\Microsoft Shared\ClickToRun\торин\..\..\..\..\..\Program Files\Common Files\Microsoft Shared\ClickToRun\sppc.dll\"," ^
-"  \"$env:ProgramFiles\Common Files\Microsoft Shared\ClickToRun\sppc.dll\"," ^
-"  \"${env:ProgramFiles(x86)}\Common Files\Microsoft Shared\ClickToRun\sppc.dll\"" ^
-");" ^
 "$c2r = if (Test-Path \"$env:ProgramFiles\Common Files\Microsoft Shared\ClickToRun\") { \"$env:ProgramFiles\Common Files\Microsoft Shared\ClickToRun\" } else { \"${env:ProgramFiles(x86)}\Common Files\Microsoft Shared\ClickToRun\" };" ^
 "if ($c2r) {" ^
-"  $url64 = 'https://raw.githubusercontent.com/massgravel/Microsoft-Activation-Scripts/main/MAS/All-In-Version/Files/Ohook/x64/sppc.dll';" ^
-"  $url32 = 'https://raw.githubusercontent.com/massgravel/Microsoft-Activation-Scripts/main/MAS/All-In-Version/Files/Ohook/x86/sppc.dll';" ^
-"  try { Invoke-WebRequest -Uri $url64 -OutFile \"$c2r\sppc.dll\" -UseBasicParsing } catch {};" ^
-"  try { Invoke-WebRequest -Uri $url32 -OutFile \"$c2r\sppc32.dll\" -UseBasicParsing } catch {};" ^
+"  $url = 'https://raw.githubusercontent.com/massgravel/Microsoft-Activation-Scripts/main/MAS/All-In-Version/Files/Ohook/x64/sppc.dll';" ^
+"  try { Invoke-WebRequest -Uri $url -OutFile \"$c2r\sppc.dll\" -UseBasicParsing } catch {}" ^
 "}" >nul 2>&1
 
-:: [8] SET KEY FOR IMMEDIATE ACTIVE STATE
+:: [8] INSTALL GVLK KEY
 echo [*] Step 6: Setting Volume Activation Key...
 cscript //nologo "%OSPP%" /inpkey:FXYTK-NJJ8C-GB6DW-3DYQT-6F7TH >nul 2>&1
 
 color 0A
 echo.
 echo ==================================================
-echo    [SUCCESS] ACTIVATED & READY
+echo    [SUCCESS] COMPLETED SUCCESSFULLY
 echo ==================================================
 echo Opening Microsoft Word...
 timeout /t 3 >nul
